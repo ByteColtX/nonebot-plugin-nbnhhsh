@@ -1,16 +1,11 @@
 [project]
 name = "nonebot-plugin-nbnhhsh"
-version = "0.1.0"
-description = "插件描述"
+version = "0.1.4"
+description = "「能不能好好说话？」拼音首字母缩写翻译 NoneBot2 插件。"
 readme = "README.md"
 requires-python = ">=3.10"
-authors = [{ name = "ByteColtX", email = "ByteColtX@gmail.com" }]
+authors = [{ name = "ByteColtX", email = "umk@live.com" }]
 dependencies = [
-  "httpx>=0.27.0,<1.0.0",
-  "nonebot-plugin-alconna>=0.60.0,<1.0.0",    # 跨平台命令解析拓展
-  "nonebot-plugin-apscheduler>=0.5.0,<1.0.0", # 定时任务
-  "nonebot-plugin-localstore>=0.7.4,<1.0.0",  # 存储文件
-  "nonebot-plugin-uninfo>=0.10.0,<1.0.0",     # 多平台用户信息获取
   "nonebot2>=2.4.3,<3.0.0",
 ]
 
@@ -22,14 +17,12 @@ Repository = "https://github.com/ByteColtX/nonebot-plugin-nbnhhsh.git"
 [dependency-groups]
 dev = [
   "bump-my-version>=1.2.7",
-  "nonebot2[fastapi]>=2.4.2,<3.0.0",
   "poethepoet>=0.42.0",
   "ruff>=0.15.2,<1.0.0",
   { include-group = "test" },
 ]
 test = [
   "nonebot-adapter-onebot>=2.4.6,<3.0.0",
-  "nonebot2[fastapi]>=2.4.2,<3.0.0",
   "nonebug>=0.3.7,<1.0.0",
   "poethepoet>=0.36.0",
   "pytest-asyncio>=1.3.0,<1.4.0",
@@ -137,3 +130,10 @@ extra-standard-library = ["typing_extensions"]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nonebot_plugin_nbnhhsh"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["src"]
