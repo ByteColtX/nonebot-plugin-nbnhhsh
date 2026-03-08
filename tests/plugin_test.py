@@ -11,9 +11,9 @@ async def test_pip(app: App):
 
     event = fake_group_message_event_v11(message="pip install nonebot2")
     try:
-        from nonebot_plugin_template import pip  # type:ignore
+        from nonebot_plugin_nbnhhsh import pip  # type:ignore
     except ImportError:
-        pytest.skip("nonebot_plugin_template.pip not found")
+        pytest.skip("nonebot_plugin_nbnhhsh.pip not found")
 
     async with app.test_matcher(pip) as ctx:
         adapter = nonebot.get_adapter(OnebotV11Adapter)
