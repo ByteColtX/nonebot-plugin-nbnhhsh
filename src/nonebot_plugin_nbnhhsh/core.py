@@ -26,7 +26,10 @@ async def guess(text: str) -> list[Tag]:
 
 
 def format_result(tags: list[Tag]) -> str:
-    """将 Tag 列表渲染为适合发送的多行文本。"""
-    if not tags:
+    """
+    将 Tag 列表渲染为适合发送的多行文本，跳过无任何信息的词条。
+    """
+    visible = [t for t in tags if t.has_translation or t.inputting]
+    if not visible:
         return "未找到翻译结果。"
-    return "\n".join(tag.format() for tag in tags)
+    return "\n".join(tag.format() for tag in visible)
