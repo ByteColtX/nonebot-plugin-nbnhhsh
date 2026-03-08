@@ -634,9 +634,10 @@ wheels = [
 
 [[package]]
 name = "nonebot-plugin-nbnhhsh"
-version = "0.1.4"
+version = "0.1.7"
 source = { editable = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "nonebot2" },
 ]
 
@@ -661,7 +662,10 @@ test = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "nonebot2", specifier = ">=2.4.3,<3.0.0" }]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.23.0,<1.0.0" },
+    { name = "nonebot2", specifier = ">=2.4.3,<3.0.0" },
+]
 
 [package.metadata.requires-dev]
 dev = [

@@ -7,9 +7,11 @@ NoneBot2 事件处理逻辑，包含：
 """
 
 from nonebot import on_command
-from nonebot.adapters import Message
-from nonebot.matcher import Matcher
 from nonebot.params import CommandArg
+from nonebot.matcher import Matcher
+from nonebot.adapters import Message
+
+from .core import guess, format_result
 
 
 def _strip(msg: Message) -> str:
@@ -22,6 +24,7 @@ nbnhhsh_cmd = on_command(
     priority=10,
     block=True,
 )
+
 
 @nbnhhsh_cmd.handle()
 async def handle_nbnhhsh(matcher: Matcher, arg: Message = CommandArg()) -> None:
@@ -37,4 +40,11 @@ async def handle_nbnhhsh(matcher: Matcher, arg: Message = CommandArg()) -> None:
             "  /nbnhhsh gkd"
         )
 
-    await matcher.finish("test_nbnhhsh: " + text)
+    try:
+        tags = await guess(text)
+    except ValueError:
+        await matcher.finish("未找到有效缩写（需含 2 个以上连续字母/数字）")
+    except Exception as e:
+        await matcher.finish(f"查询失败：{e}")
+
+    await matcher.finish(format_result(tags))
