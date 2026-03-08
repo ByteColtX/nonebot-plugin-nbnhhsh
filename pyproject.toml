@@ -8,6 +8,7 @@ authors = [{ name = "ByteColtX", email = "umk@live.com" }]
 dependencies = [
   "httpx>=0.23.0,<1.0.0",
   "nonebot2>=2.4.3,<3.0.0",
+  "nonebot2[fastapi]"
 ]
 
 [project.urls]
@@ -134,7 +135,3 @@ keep-runtime-typing = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/nonebot_plugin_nbnhhsh"]
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-pythonpath = ["src"]
