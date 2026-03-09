@@ -10,7 +10,7 @@ from .api import api_guess, api_submit
 from .parser import Tag, has_abbr, parse_tags, extract_abbrs
 
 
-async def guess(text: str) -> list[Tag]:
+async def guess(text: str, timeout: int = 10) -> list[Tag]:
     """
     翻译文本中包含的所有缩写。
 
@@ -35,7 +35,7 @@ def format_result(tags: list[Tag]) -> str:
     return "\n".join(tag.format() for tag in visible)
 
 
-async def submit(name: str, text: str) -> None:
+async def submit(name: str, text: str, timeout: int = 10) -> None:
     """
     提交补充翻译。
 

@@ -5,6 +5,7 @@ NoneBot2 事件处理逻辑，包含：
   - /nbnhhsh <缩写>                 主动翻译命令
   - /nbnhhsh submit <缩写> <文字>    提交补充翻译
   - 自然语言问句触发                 「xx是什么」「xx是啥」「xx啥意思」等
+  - 自动捕获缩写词条                  需在.env配置 NBNHHSH_AUTO=true
 """
 
 import re
@@ -16,6 +17,7 @@ from nonebot.matcher import Matcher
 from nonebot.adapters import Message
 
 from .core import guess, submit, format_result
+from .config import plugin_config
 
 
 def _strip(msg: Message) -> str:
@@ -111,3 +113,34 @@ async def handle_question(matcher: Matcher, msg: Message = EventMessage()) -> No
         await matcher.finish(f"查询失败：{e}")
 
     await matcher.finish(format_result(tags))
+
+
+def _auto_rule() -> Rule:
+    async def _check(msg: Message = EventMessage()) -> bool:
+        if not plugin_config.nbnhhsh_auto:
+            return False
+        text = msg.extract_plain_text()
+        return bool(
+            re.search(rf"[a-zA-Z0-9]{{{plugin_config.nbnhhsh_auto_min_len},}}", text)
+        )
+
+    return Rule(_check)
+
+
+auto_matcher = on_message(rule=_auto_rule(), priority=99, block=False)
+
+
+@auto_matcher.handle()
+async def handle_auto(matcher: Matcher, msg: Message = EventMessage()) -> None:
+    text = msg.extract_plain_text().strip()
+    try:
+        tags = await guess(text, timeout=plugin_config.nbnhhsh_timeout)
+    except Exception:
+        return
+
+    # 过滤暂未录入和空词条，return 静默退出
+    visible = [t for t in tags if t.has_translation]
+    if not visible:
+        return
+
+    await matcher.send(format_result(visible))
