@@ -67,7 +67,7 @@ async def handle_submit(matcher: Matcher, arg: Message = CommandArg()) -> None:
 
     name, text = parts
     try:
-        await submit(name, text)
+        await submit(name, text, timeout=plugin_config.nbnhhsh_timeout)
     except Exception as e:
         await matcher.finish(f"提交失败：{e}")
 
