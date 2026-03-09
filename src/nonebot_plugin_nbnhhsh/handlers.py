@@ -15,9 +15,21 @@ from nonebot.rule import Rule
 from nonebot.params import CommandArg, EventMessage
 from nonebot.matcher import Matcher
 from nonebot.adapters import Message
+from nonebot.adapters.onebot.v11 import MessageSegment
 
 from .core import guess, submit, format_result
 from .config import plugin_config
+from .render import text_to_image
+
+
+
+async def _reply(matcher: Matcher, text: str) -> None:
+    """根据配置以文字或图片形式发送结果。"""
+    if plugin_config.nbnhhsh_text2pic:
+        img = await text_to_image(text)
+        await matcher.finish(MessageSegment.image(img))
+    else:
+        await matcher.finish(text)
 
 
 def _strip(msg: Message) -> str:
@@ -52,8 +64,7 @@ async def handle_nbnhhsh(matcher: Matcher, arg: Message = CommandArg()) -> None:
     except Exception as e:
         await matcher.finish(f"查询失败：{e}")
 
-    await matcher.finish(format_result(tags))
-
+    await _reply(matcher, format_result(tags))
 
 @submit_cmd.handle()
 async def handle_submit(matcher: Matcher, arg: Message = CommandArg()) -> None:
@@ -112,7 +123,7 @@ async def handle_question(matcher: Matcher, msg: Message = EventMessage()) -> No
     except Exception as e:
         await matcher.finish(f"查询失败：{e}")
 
-    await matcher.finish(format_result(tags))
+    await _reply(matcher, format_result(tags))
 
 
 def _auto_rule() -> Rule:
@@ -143,4 +154,10 @@ async def handle_auto(matcher: Matcher, msg: Message = EventMessage()) -> None:
     if not visible:
         return
 
-    await matcher.send(format_result(visible))
+    result = format_result(visible)
+    if plugin_config.nbnhhsh_text2pic:
+        img = await text_to_image(result)
+        await matcher.send(MessageSegment.image(img))
+    else:
+        await matcher.send(result)
+
