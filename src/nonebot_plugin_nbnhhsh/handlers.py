@@ -2,19 +2,20 @@
 nonebot_plugin_nbnhhsh.handlers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 NoneBot2 事件处理逻辑，包含：
-  - /nbnhhsh <缩写>    主动翻译命令
-  - /nbnhhsh submit <缩写> <文字>  提交补充翻译
+  - /nbnhhsh <缩写>                 主动翻译命令
+  - /nbnhhsh submit <缩写> <文字>    提交补充翻译
+  - 自然语言问句触发                 「xx是什么」「xx是啥」「xx啥意思」等
 """
 
 import re
 
-from nonebot import on_command, on_message
+from nonebot import on_command, on_message, CommandGroup
+from nonebot.rule import Rule
 from nonebot.params import CommandArg, EventMessage
 from nonebot.matcher import Matcher
 from nonebot.adapters import Message
-from nonebot.rule import Rule
 
-from .core import guess, format_result
+from .core import guess, submit, format_result
 
 
 def _strip(msg: Message) -> str:
@@ -22,12 +23,10 @@ def _strip(msg: Message) -> str:
     return msg.extract_plain_text().strip()
 
 
-nbnhhsh_cmd = on_command(
-    "nbnhhsh",
-    aliases={"好好说话", "hhsh", "缩写"},
-    priority=10,
-    block=True,
-)
+nbnhhsh = CommandGroup("nbnhhsh", priority=10, block=True)
+
+nbnhhsh_cmd = nbnhhsh.command(tuple(), aliases={"好好说话", "hhsh", "缩写"})
+submit_cmd = nbnhhsh.command("submit", aliases={"提交"})
 
 
 @nbnhhsh_cmd.handle()
@@ -52,6 +51,27 @@ async def handle_nbnhhsh(matcher: Matcher, arg: Message = CommandArg()) -> None:
         await matcher.finish(f"查询失败：{e}")
 
     await matcher.finish(format_result(tags))
+
+
+@submit_cmd.handle()
+async def handle_submit(matcher: Matcher, arg: Message = CommandArg()) -> None:
+    parts = _strip(arg).split(maxsplit=1)
+
+    if len(parts) < 2:
+        await matcher.finish(
+            "用法：/nbnhhsh submit <缩写> <对应文字>\n"
+            "示例：/nbnhhsh submit yyds 永远的神（网络流行语）"
+        )
+
+    name, text = parts
+    try:
+        await submit(name, text)
+    except Exception as e:
+        await matcher.finish(f"提交失败：{e}")
+
+    await matcher.finish(
+        f"✅ 已提交：「{name}」→「{text}」\n感谢贡献！审核通过后将生效。"
+    )
 
 
 _QUESTION_RE = re.compile(

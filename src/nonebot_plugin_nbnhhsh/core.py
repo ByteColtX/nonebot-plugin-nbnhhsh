@@ -6,7 +6,7 @@ nonebot_plugin_nbnhhsh.core
 
 from __future__ import annotations
 
-from .api import api_guess
+from .api import api_guess, api_submit
 from .parser import Tag, has_abbr, parse_tags, extract_abbrs
 
 
@@ -33,3 +33,17 @@ def format_result(tags: list[Tag]) -> str:
     if not visible:
         return "未找到翻译结果。"
     return "\n".join(tag.format() for tag in visible)
+
+
+async def submit(name: str, text: str) -> None:
+    """
+    提交补充翻译。
+
+    :param name: 缩写，如 ``"yyds"``
+    :param text: 对应文字，末尾可括号注明来源，如 ``"永远的神（网络流行语）"``
+    :raises ValueError: 提交内容为空
+    """
+    text = text.strip()
+    if not text:
+        raise ValueError("提交内容不能为空")
+    await api_submit(name, text)

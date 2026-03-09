@@ -29,3 +29,19 @@ async def api_guess(text: str) -> list[dict[str, Any]]:
         resp.raise_for_status()
         data = resp.json()
         return data if isinstance(data, list) else []
+
+
+async def api_submit(name: str, text: str) -> None:
+    """
+    POST /translation/<n> - 提交补充翻译
+
+    :param name: 缩写，如 ``"yyds"``
+    :param text: 对应文字，末尾可括号注明来源，如 ``"永远的神（网络流行语）"``
+    """
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.post(
+            API_BASE + f"translation/{name}",
+            json={"text": text},
+            headers={"Content-Type": "application/json"},
+        )
+        resp.raise_for_status()

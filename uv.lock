@@ -702,7 +702,7 @@ wheels = [
 
 [[package]]
 name = "nonebot-plugin-nbnhhsh"
-version = "0.1.9"
+version = "0.1.11"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
