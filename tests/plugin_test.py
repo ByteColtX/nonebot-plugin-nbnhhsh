@@ -56,6 +56,7 @@ class TestParseTags:
         tag = tags[0]
         assert tag.name == "yyds"
         assert tag.has_translation
+        assert tag.translations is not None
         assert tag.translations[0].text == "永远的神"
         assert tag.translations[0].note == "网络流行语"
         assert tag.translations[1].text == "永远滴神"
