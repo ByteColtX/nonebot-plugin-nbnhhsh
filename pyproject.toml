@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-plugin-nbnhhsh"
-version = "0.1.12"
+version = "0.1.13"
 description = "「能不能好好说话？」拼音首字母缩写翻译 NoneBot2 插件。"
 readme = "README.md"
 requires-python = ">=3.10"
