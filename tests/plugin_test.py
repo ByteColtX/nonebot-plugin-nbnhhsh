@@ -6,14 +6,14 @@ nonebot-plugin-nbnhhsh 单元测试
 
 from __future__ import annotations
 
-import pytest
-
-from nonebot_plugin_nbnhhsh.parser import (
-    Tag, Translation,
-    extract_abbrs, has_abbr, parse_tags,
-)
 from nonebot_plugin_nbnhhsh.core import format_result
-
+from nonebot_plugin_nbnhhsh.parser import (
+    Tag,
+    Translation,
+    has_abbr,
+    parse_tags,
+    extract_abbrs,
+)
 
 # ── extract_abbrs ────────────────────────────────────────────────────────────
 
@@ -52,7 +52,9 @@ class TestHasAbbr:
 class TestParseTags:
     def test_with_trans(self):
         """有 trans 字段且有值 → has_translation"""
-        tags = parse_tags([{"name": "yyds", "trans": ["永远的神（网络流行语）", "永远滴神"]}])
+        tags = parse_tags(
+            [{"name": "yyds", "trans": ["永远的神（网络流行语）", "永远滴神"]}]
+        )
         tag = tags[0]
         assert tag.name == "yyds"
         assert tag.has_translation
@@ -97,7 +99,10 @@ class TestTagFormat:
     def test_with_translation(self):
         tag = Tag(
             name="yyds",
-            translations=[Translation("永远的神", "网络流行语"), Translation("永远滴神")],
+            translations=[
+                Translation("永远的神", "网络流行语"),
+                Translation("永远滴神"),
+            ],
         )
         assert tag.format() == "[yyds] 永远的神（网络流行语）、 永远滴神"
 

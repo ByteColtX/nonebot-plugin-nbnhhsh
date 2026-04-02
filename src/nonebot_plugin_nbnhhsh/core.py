@@ -21,7 +21,7 @@ async def guess(text: str, timeout: int = 10) -> list[Tag]:
     if not has_abbr(text):
         raise ValueError(f"文本中不包含有效缩写: {text!r}")
 
-    raw = await api_guess(extract_abbrs(text))
+    raw = await api_guess(extract_abbrs(text), timeout=timeout)
     return parse_tags(raw)
 
 

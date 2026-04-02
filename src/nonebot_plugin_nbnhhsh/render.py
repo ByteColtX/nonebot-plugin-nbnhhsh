@@ -20,7 +20,7 @@ async def text_to_image(text: str) -> bytes:
     :param text: 要渲染的文本
     :returns:    PNG 格式的图片字节
     """
-    lines = text.strip().split('\n')
+    lines = text.strip().split("\n")
     html_parts = []
 
     for line in lines:
@@ -28,14 +28,14 @@ async def text_to_image(text: str) -> bytes:
         if not line:
             continue
 
-        if line.startswith('[') and '] ' in line:
-            abbr_part, meaning_part = line.split('] ', 1)
+        if line.startswith("[") and "] " in line:
+            abbr_part, meaning_part = line.split("] ", 1)
             abbr = abbr_part[1:]
-            meanings = [m.strip() for m in meaning_part.split('、') if m.strip()]
+            meanings = [m.strip() for m in meaning_part.split("、") if m.strip()]
 
             html_parts.append(f'<div class="abbr">{abbr}</div>')
             if meanings:
-                meaning_items = ''.join(
+                meaning_items = "".join(
                     f'<div class="meaning-item">{meaning}</div>'
                     for meaning in meanings
                 )

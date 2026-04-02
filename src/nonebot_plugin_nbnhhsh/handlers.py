@@ -10,7 +10,7 @@ NoneBot2 事件处理逻辑，包含：
 
 import re
 
-from nonebot import on_command, on_message, CommandGroup
+from nonebot import CommandGroup, on_message
 from nonebot.rule import Rule
 from nonebot.params import CommandArg, EventMessage
 from nonebot.matcher import Matcher
@@ -20,7 +20,6 @@ from nonebot.adapters.onebot.v11 import MessageSegment
 from .core import guess, submit, format_result
 from .config import plugin_config
 from .render import text_to_image
-
 
 
 async def _reply(matcher: Matcher, text: str) -> None:
@@ -33,13 +32,13 @@ async def _reply(matcher: Matcher, text: str) -> None:
 
 
 def _strip(msg: Message) -> str:
-    """工具函数"""
+    """提取并去除消息文本两端空白。"""
     return msg.extract_plain_text().strip()
 
 
 nbnhhsh = CommandGroup("nbnhhsh", priority=10, block=True)
 
-nbnhhsh_cmd = nbnhhsh.command(tuple(), aliases={"好好说话", "hhsh", "缩写"})
+nbnhhsh_cmd = nbnhhsh.command((), aliases={"好好说话", "hhsh", "缩写"})
 submit_cmd = nbnhhsh.command("submit", aliases={"提交"})
 
 

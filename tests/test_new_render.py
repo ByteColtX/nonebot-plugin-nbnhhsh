@@ -10,7 +10,7 @@ import nonebot
 
 nonebot.init()
 
-from nonebot_plugin_nbnhhsh.core import format_result, guess
+from nonebot_plugin_nbnhhsh.core import guess, format_result
 from nonebot_plugin_nbnhhsh.render import text_to_image
 
 
@@ -28,4 +28,4 @@ async def test_real_request_then_render(tmp_path: Path) -> None:
     output_path = tmp_path / "test_real_request_then_render.png"
     output_path.write_bytes(image_bytes)
 
-    print(f"rendered image saved to: {output_path}")
+    assert output_path.exists()

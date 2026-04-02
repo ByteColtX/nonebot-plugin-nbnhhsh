@@ -183,3 +183,5 @@ config/
 
 .DS_Store
 junit.xml
+pytest-of-*/
+

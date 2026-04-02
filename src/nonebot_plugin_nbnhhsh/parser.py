@@ -46,7 +46,7 @@ class Tag:
     """一个缩写词条及其翻译结果。"""
 
     name: str
-    translations: list[Translation] | None  # None = 明确无对应
+    translations: list[Translation] = field(default_factory=list)
     inputting: list[str] = field(default_factory=list)
 
     @property
@@ -56,7 +56,7 @@ class Tag:
     def format(self) -> str:
         """返回适合在聊天中展示的字符串。"""
         if self.has_translation:
-            trans_str = "、 ".join(str(t) for t in self.translations)  # type: ignore[union-attr]
+            trans_str = "、 ".join(str(t) for t in self.translations)
             return f"[{self.name}] {trans_str}"
         hint = f"可能是：{'、'.join(self.inputting)}" if self.inputting else ""
         return f"[{self.name}] 暂未录入\n{hint}"
