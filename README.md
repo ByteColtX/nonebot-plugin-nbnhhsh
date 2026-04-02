@@ -21,7 +21,8 @@
 
 ## 🎨 效果图
 
-<img src="./images/e3e480bd-fea8-4448-964d-7a645499113f.png" alt="效果图" width="200"/>
+<img src="./images/e3e480bd-fea8-4448-964d-7a645499113f.png" alt="效果图1" width="220"/>
+<img src="./images/7dc9282a5bf69d644ddb4eb3ddd52e34.png" alt="图片渲染效果图" width="460"/>
 
 
 ## 💿 安装
