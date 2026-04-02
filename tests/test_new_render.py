@@ -3,12 +3,9 @@
 from pathlib import Path
 
 import pytest
-
-pytest.importorskip("fastapi")
-
 import nonebot
 
-nonebot.init()
+nonebot.init(driver="~none")
 
 from nonebot_plugin_nbnhhsh.core import guess, format_result
 from nonebot_plugin_nbnhhsh.render import text_to_image
