@@ -20,24 +20,19 @@ async def text_to_image(text: str) -> bytes:
     :param text: 要渲染的文本
     :returns:    PNG 格式的图片字节
     """
-    # 解析文本格式：[缩写] 翻译1、翻译2、翻译3...
     lines = text.strip().split('\n')
     html_parts = []
-    
+
     for line in lines:
         line = line.strip()
         if not line:
             continue
-            
+
         if line.startswith('[') and '] ' in line:
-            # 提取缩写和翻译
             abbr_part, meaning_part = line.split('] ', 1)
-            abbr = abbr_part[1:]  # 去掉 [
-            
-            # 分割翻译项
+            abbr = abbr_part[1:]
             meanings = [m.strip() for m in meaning_part.split('、') if m.strip()]
-            
-            # 构建HTML
+
             html_parts.append(f'<div class="abbr">{abbr}</div>')
             if meanings:
                 meaning_items = ''.join(
@@ -46,9 +41,8 @@ async def text_to_image(text: str) -> bytes:
                 )
                 html_parts.append(f'<div class="meaning-list">{meaning_items}</div>')
         else:
-            # 非标准格式，直接显示
             html_parts.append(f'<div class="text">{line}</div>')
-    
+
     html_content = f"""<!doctype html>
 <html>
 <head>
@@ -59,7 +53,7 @@ body {{
   margin: 0;
   padding: 24px;
   background: #fff8f1;
-  font-family: 'Noto Sans CJK SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Noto Sans CJK SC';
   color: #2b2b2b;
 }}
 .panel {{
@@ -70,22 +64,23 @@ body {{
   padding: 18px;
 }}
 .heading {{
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 800;
   color: #b45309;
   margin-bottom: 6px;
 }}
 .desc {{
   font-size: 12px;
+  font-weight: 500;
   color: #92400e;
   margin-bottom: 14px;
 }}
 .abbr {{
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
   color: #c2410c;
   margin-bottom: 12px;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }}
 .meaning-list {{
   display: flex;
@@ -97,36 +92,33 @@ body {{
   padding: 10px 16px;
   background: transparent;
   border-radius: 16px;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: #92400e;
 }}
 .text {{
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.6;
+  font-weight: 500;
   color: #2b2b2b;
   margin-bottom: 12px;
-}}
-.note {{
-  margin-top: 16px;
-  font-size: 11px;
-  color: #a16207;
 }}
 </style>
 </head>
 <body>
   <div class="panel">
-    <div class="heading">缩写翻译</div>
-    <div class="desc">NBNHHSH 缩写翻译结果</div>
+    <div class="heading">能不能好好说话？</div>
+    <div class="desc">数据源： 神奇的海螺</div>
     {''.join(html_parts)}
   </div>
 </body>
 </html>"""
-    
+
     return await html_to_pic(
         html_content,
         max_width=720,
-        dpi=96.0,
-        allow_refit=True,
-        image_format="png"
+        dpi=144.0,
+        font_name="Noto Sans CJK SC",
+        allow_refit=False,
+        image_format="png",
     )
