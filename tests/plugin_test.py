@@ -17,6 +17,7 @@ from nonebot_plugin_nbnhhsh.parser import (
 
 # ── extract_abbrs ────────────────────────────────────────────────────────────
 
+
 class TestExtractAbbrs:
     def test_basic(self):
         assert extract_abbrs("yyds nb！") == "yyds,nb"
@@ -36,6 +37,7 @@ class TestExtractAbbrs:
 
 # ── has_abbr ─────────────────────────────────────────────────────────────────
 
+
 class TestHasAbbr:
     def test_true(self):
         assert has_abbr("yyds！") is True
@@ -48,6 +50,7 @@ class TestHasAbbr:
 
 
 # ── parse_tags ───────────────────────────────────────────────────────────────
+
 
 class TestParseTags:
     def test_with_trans(self):
@@ -95,6 +98,7 @@ class TestParseTags:
 
 # ── Tag.format ───────────────────────────────────────────────────────────────
 
+
 class TestTagFormat:
     def test_with_translation(self):
         tag = Tag(
@@ -120,6 +124,7 @@ class TestTagFormat:
 
 # ── format_result ─────────────────────────────────────────────────────────────
 
+
 class TestFormatResult:
     def test_with_translations(self):
         tags = parse_tags([{"name": "yyds", "trans": ["永远的神"]}])
@@ -136,10 +141,12 @@ class TestFormatResult:
         assert "还是地方" in format_result(tags)
 
     def test_multiple_tags(self):
-        tags = parse_tags([
-            {"name": "yyds", "trans": ["永远的神"]},
-            {"name": "nb",   "trans": ["牛逼"]},
-        ])
+        tags = parse_tags(
+            [
+                {"name": "yyds", "trans": ["永远的神"]},
+                {"name": "nb", "trans": ["牛逼"]},
+            ]
+        )
         result = format_result(tags)
         assert "[yyds] 永远的神" in result
         assert "[nb] 牛逼" in result

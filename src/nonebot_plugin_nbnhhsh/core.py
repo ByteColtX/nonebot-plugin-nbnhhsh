@@ -11,12 +11,17 @@ from .parser import Tag, has_abbr, parse_tags, extract_abbrs
 
 
 async def guess(text: str, timeout: int = 10) -> list[Tag]:
-    """
-    翻译文本中包含的所有缩写。
+    """翻译文本中包含的所有缩写。
 
-    :param text:  任意含缩写的字符串
-    :returns:     词条列表
-    :raises ValueError: 文本中不含任何有效缩写
+    Args:
+        text: 任意含缩写的字符串。
+        timeout: HTTP 请求超时时间，单位为秒。
+
+    Returns:
+        解析后的词条列表。
+
+    Raises:
+        ValueError: 文本中不含任何有效缩写。
     """
     if not has_abbr(text):
         raise ValueError(f"文本中不包含有效缩写: {text!r}")
@@ -26,8 +31,13 @@ async def guess(text: str, timeout: int = 10) -> list[Tag]:
 
 
 def format_result(tags: list[Tag]) -> str:
-    """
-    将 Tag 列表渲染为适合发送的多行文本，跳过无任何信息的词条。
+    """将词条列表渲染为适合发送的多行文本。
+
+    Args:
+        tags: 待渲染的词条列表。
+
+    Returns:
+        渲染后的多行文本。若没有可展示的词条，则返回兜底提示。
     """
     visible = [t for t in tags if t.has_translation or t.inputting]
     if not visible:
@@ -36,12 +46,16 @@ def format_result(tags: list[Tag]) -> str:
 
 
 async def submit(name: str, text: str, timeout: int = 10) -> None:
-    """
-    提交补充翻译。
+    """提交补充翻译。
 
-    :param name: 缩写，如 ``"yyds"``
-    :param text: 对应文字，末尾可括号注明来源，如 ``"永远的神（网络流行语）"``
-    :raises ValueError: 提交内容为空
+    Args:
+        name: 缩写，如 ``"yyds"``。
+        text: 对应文字，末尾可括号注明来源，如
+            ``"永远的神（网络流行语）"``。
+        timeout: HTTP 请求超时时间，单位为秒。
+
+    Raises:
+        ValueError: 提交内容为空。
     """
     text = text.strip()
     if not text:

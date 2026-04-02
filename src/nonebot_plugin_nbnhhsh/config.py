@@ -16,6 +16,8 @@ from pydantic import BaseModel
 
 
 class Config(BaseModel):
+    """插件配置模型。"""
+
     nbnhhsh_auto: bool = False
     nbnhhsh_auto_min_len: int = 2
     nbnhhsh_timeout: int = 10

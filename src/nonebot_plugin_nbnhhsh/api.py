@@ -14,11 +14,14 @@ API_BASE = "https://lab.magiconch.com/api/nbnhhsh/"
 
 
 async def api_guess(text: str, timeout: int = 10) -> list[dict[str, Any]]:
-    """
-    POST /guess — 查询缩写翻译。
+    """查询缩写翻译。
 
-    :param text: 用逗号分隔的缩写串，如 ``"yyds,nb"``
-    :returns: 词条列表 `[{"name": "<缩写>", "trans": "<翻译>"}]`
+    Args:
+        text: 用逗号分隔的缩写串，如 ``"yyds,nb"``。
+        timeout: HTTP 请求超时时间，单位为秒。
+
+    Returns:
+        API 返回的词条列表。若响应不是列表，则返回空列表。
     """
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(
@@ -32,11 +35,13 @@ async def api_guess(text: str, timeout: int = 10) -> list[dict[str, Any]]:
 
 
 async def api_submit(name: str, text: str, timeout: int = 10) -> None:
-    """
-    POST /translation/<n> - 提交补充翻译
+    """提交补充翻译。
 
-    :param name: 缩写，如 ``"yyds"``
-    :param text: 对应文字，末尾可括号注明来源，如 ``"永远的神（网络流行语）"``
+    Args:
+        name: 缩写，如 ``"yyds"``。
+        text: 对应文字，末尾可括号注明来源，如
+            ``"永远的神（网络流行语）"``。
+        timeout: HTTP 请求超时时间，单位为秒。
     """
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(

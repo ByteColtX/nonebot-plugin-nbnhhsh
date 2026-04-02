@@ -23,7 +23,12 @@ from .render import text_to_image
 
 
 async def _reply(matcher: Matcher, text: str) -> None:
-    """根据配置以文字或图片形式发送结果。"""
+    """根据配置以文字或图片形式发送结果。
+
+    Args:
+        matcher: 当前事件对应的 matcher。
+        text: 待发送的文本内容。
+    """
     if plugin_config.nbnhhsh_text2pic:
         img = await text_to_image(text)
         await matcher.finish(MessageSegment.image(img))
@@ -32,7 +37,14 @@ async def _reply(matcher: Matcher, text: str) -> None:
 
 
 def _strip(msg: Message) -> str:
-    """提取并去除消息文本两端空白。"""
+    """提取并去除消息文本两端空白。
+
+    Args:
+        msg: 输入消息对象。
+
+    Returns:
+        处理后的纯文本。
+    """
     return msg.extract_plain_text().strip()
 
 
@@ -64,6 +76,7 @@ async def handle_nbnhhsh(matcher: Matcher, arg: Message = CommandArg()) -> None:
         await matcher.finish(f"查询失败：{e}")
 
     await _reply(matcher, format_result(tags))
+
 
 @submit_cmd.handle()
 async def handle_submit(matcher: Matcher, arg: Message = CommandArg()) -> None:
@@ -159,4 +172,3 @@ async def handle_auto(matcher: Matcher, msg: Message = EventMessage()) -> None:
         await matcher.send(MessageSegment.image(img))
     else:
         await matcher.send(result)
-

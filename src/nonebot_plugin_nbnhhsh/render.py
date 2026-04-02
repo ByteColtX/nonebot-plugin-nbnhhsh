@@ -14,11 +14,13 @@ from nonebot_plugin_htmlkit import html_to_pic
 
 
 async def text_to_image(text: str) -> bytes:
-    """
-    将文本渲染为 PNG 图片，返回字节数据。
+    """将文本渲染为 PNG 图片。
 
-    :param text: 要渲染的文本
-    :returns:    PNG 格式的图片字节
+    Args:
+        text: 要渲染的文本。
+
+    Returns:
+        PNG 格式的图片字节。
     """
     lines = text.strip().split("\n")
     html_parts = []
@@ -36,8 +38,7 @@ async def text_to_image(text: str) -> bytes:
             html_parts.append(f'<div class="abbr">{abbr}</div>')
             if meanings:
                 meaning_items = "".join(
-                    f'<div class="meaning-item">{meaning}</div>'
-                    for meaning in meanings
+                    f'<div class="meaning-item">{meaning}</div>' for meaning in meanings
                 )
                 html_parts.append(f'<div class="meaning-list">{meaning_items}</div>')
         else:
@@ -109,7 +110,7 @@ body {{
   <div class="panel">
     <div class="heading">能不能好好说话？</div>
     <div class="desc">数据源： 神奇的海螺</div>
-    {''.join(html_parts)}
+    {"".join(html_parts)}
   </div>
 </body>
 </html>"""

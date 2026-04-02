@@ -14,16 +14,28 @@ from dataclasses import field, dataclass
 
 
 def extract_abbrs(text: str) -> str:
-    """
-    提取文本中所有长度 ≥ 2 的字母/数字串，用逗号拼接。
+    """提取文本中的有效缩写并用逗号拼接。
 
-    等价于原 JS：``text.match(/[a-z0-9]{2,}/ig).join(',')``
+    等价于原 JS：``text.match(/[a-z0-9]{2,}/ig).join(',')``。
+
+    Args:
+        text: 输入文本。
+
+    Returns:
+        提取后的缩写字符串。若未命中，则返回空字符串。
     """
     return ",".join(re.findall(r"[a-zA-Z0-9]{2,}", text))
 
 
 def has_abbr(text: str) -> bool:
-    """判断文本是否包含至少一个有效缩写。"""
+    """判断文本是否包含至少一个有效缩写。
+
+    Args:
+        text: 输入文本。
+
+    Returns:
+        是否命中至少一个长度不小于 2 的字母或数字串。
+    """
     return bool(re.search(r"[a-zA-Z0-9]{2,}", text))
 
 
@@ -32,7 +44,12 @@ def has_abbr(text: str) -> bool:
 
 @dataclass
 class Translation:
-    """单条翻译，拆分主体与括号内来源注释。"""
+    """单条翻译。
+
+    Attributes:
+        text: 翻译主体。
+        note: 可选的来源或备注信息。
+    """
 
     text: str
     note: str | None = None
@@ -43,7 +60,13 @@ class Translation:
 
 @dataclass
 class Tag:
-    """一个缩写词条及其翻译结果。"""
+    """一个缩写词条及其翻译结果。
+
+    Attributes:
+        name: 缩写原文。
+        translations: 已录入的翻译列表。
+        inputting: 可能的候选释义列表。
+    """
 
     name: str
     translations: list[Translation] = field(default_factory=list)
@@ -54,7 +77,11 @@ class Tag:
         return bool(self.translations)
 
     def format(self) -> str:
-        """返回适合在聊天中展示的字符串。"""
+        """返回适合在聊天中展示的字符串。
+
+        Returns:
+            单个词条的展示文本。
+        """
         if self.has_translation:
             trans_str = "、 ".join(str(t) for t in self.translations)
             return f"[{self.name}] {trans_str}"
@@ -73,7 +100,14 @@ def _parse_translation(raw: str) -> Translation:
 
 
 def parse_tags(data: list[dict[str, Any]]) -> list[Tag]:
-    """将 API 原始列表解析为 :class:`Tag` 列表。"""
+    """将 API 原始列表解析为词条列表。
+
+    Args:
+        data: API 返回的原始词条列表。
+
+    Returns:
+        解析后的 :class:`Tag` 列表。
+    """
     result = []
     for item in data:
         name = item.get("name", "")
