@@ -789,7 +789,7 @@ wheels = [
 
 [[package]]
 name = "nonebot-plugin-nbnhhsh"
-version = "0.1.16"
+version = "0.1.18"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
