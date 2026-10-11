@@ -31,46 +31,63 @@ logger = logging.getLogger("nonebot_plugin_nbnhhsh.render")
 
 SUPERSAMPLE = 2
 PAGE_WIDTH = 720
-PAGE_PADDING = 24
-PANEL_PADDING = 18
-PANEL_RADIUS = 20
-PANEL_BORDER = 2
-PANEL_SHADOW_BLUR = 12
-PANEL_SHADOW_OFFSET = 10
-PANEL_SHADOW_ALPHA = 26
+PAGE_PADDING_X = 48
+PAGE_PADDING_TOP = 42
+PAGE_PADDING_BOTTOM = 48
 
-HEADING_SIZE = 22
-HEADING_WEIGHT = 800
-HEADING_GAP = 6
+HEADER_ICON_SIZE = 52
+HEADER_ICON_INSET = 7
+HEADER_ICON_GAP = 14
+HEADING_SIZE = 23
+HEADING_WEIGHT = 650
+HEADING_GAP = 5
 DESC_SIZE = 12
-DESC_WEIGHT = 500
-DESC_GAP = 14
-ABBR_SIZE = 26
-ABBR_WEIGHT = 800
-ABBR_GAP = 12
-MEANING_SIZE = 16
-MEANING_WEIGHT = 500
-MEANING_PAD_X = 16
-MEANING_PAD_Y = 10
-MEANING_GAP = 10
-MEANING_TOP_GAP = 16
+DESC_WEIGHT = 400
+DESC_GAP = 26
+ABBR_SIZE = 22
+ABBR_WEIGHT = 600
+ABBR_META_SIZE = 11
+ABBR_META_WEIGHT = 400
+MEANING_SIZE = 15
+MEANING_WEIGHT = 400
+MEANING_LINE_HEIGHT = 1.35
+MEANING_ROW_GAP = 7
+MEANING_COLUMN_GAP = 20
+MEANING_BULLET_SIZE = 5
+MEANING_BULLET_GAP = 9
 TEXT_SIZE = 16
-TEXT_WEIGHT = 500
-TEXT_LINE_HEIGHT = 1.6
-TEXT_GAP = 12
+TEXT_WEIGHT = 400
+TEXT_LINE_HEIGHT = 1.55
+ENTRY_TOP_PAD = 12
+ENTRY_BOTTOM_PAD = 15
+ENTRY_TITLE_GAP = 10
+ENTRY_ACCENT_WIDTH = 4
+ENTRY_ACCENT_RADIUS = 2
+ENTRY_GAP = 19
+ENTRY_DIVIDER_GAP = 15
 NORMAL_LINE_HEIGHT = 1.2
 
-PAGE_BG = (255, 248, 241)  # #fff8f1
-PANEL_BG = (255, 253, 249)  # #fffdf9
-PANEL_EDGE = (255, 215, 168)  # #ffd7a8
-SHADOW_RGB = (180, 118, 33)
-HEADING_FG = (180, 83, 9)  # #b45309
-DESC_FG = (146, 64, 14)  # #92400e
-ABBR_FG = (194, 65, 12)  # #c2410c
-TEXT_FG = (43, 43, 43)  # #2b2b2b
+PAGE_BG = (246, 247, 250)  # #f6f7fa
+DIVIDER = (235, 237, 242)  # #ebedf2
+HEADING_FG = (29, 31, 38)  # #1d1f26
+DESC_FG = (112, 116, 126)  # #70747e
+ABBR_FG = (35, 38, 48)  # #232630
+TEXT_FG = (57, 61, 72)  # #393d48
+ICON_HALO = (255, 255, 255)
+ICON_HALO_EDGE = (232, 235, 242)
+RAINBOW_ACCENTS: tuple[tuple[int, int, int], ...] = (
+    (235, 103, 158),  # pink
+    (244, 165, 76),  # orange
+    (67, 177, 157),  # green
+    (86, 133, 224),  # blue
+    (157, 105, 210),  # purple
+)
+SINGLE_ACCENT = RAINBOW_ACCENTS[0]
 
 HEADING_TEXT = "能不能好好说话？"
-DESC_TEXT = "数据源： 神奇的海螺"
+DESC_TEXT = "数据源：神奇的海螺"
+
+ICON_PATH = Path(__file__).with_name("assets") / "magiconch-favicon.ico"
 
 # 中文字体候选：系统里已有的直接用，省一次下载。
 SYSTEM_FONTS: tuple[str, ...] = (
@@ -319,241 +336,383 @@ def _parse(text: str) -> list[tuple[str, str, list[str]]]:
     return blocks
 
 
+
+def _ellipsize(text: str, font: Any, max_width: int) -> str:
+    """在单行内截短文本，保证释义永远不会被折行。"""
+    text = " ".join(text.replace("\n", " ").split())
+    if max_width <= 0:
+        return ""
+    if font.getlength(text) <= max_width:
+        return text
+
+    ellipsis = "…"
+    ellipsis_width = font.getlength(ellipsis)
+    if ellipsis_width > max_width:
+        return ellipsis
+
+    left, right = 0, len(text)
+    while left < right:
+        middle = (left + right + 1) // 2
+        candidate = text[:middle].rstrip() + ellipsis
+        if font.getlength(candidate) <= max_width:
+            left = middle
+        else:
+            right = middle - 1
+    return text[:left].rstrip() + ellipsis
+
+
 def _pack_meanings(
     meanings: list[str],
     font: Any,
     max_width: int,
     *,
     scale: int = 1,
-) -> list[list[tuple[str, int]]]:
-    """把释义条目排成若干行（对应原 CSS 的 flex-wrap）。
+) -> dict[str, Any]:
+    """按宽度从短到长横向装行，并锁定等距栏位的起点。
 
-    Args:
-        meanings: 释义文本列表。
-        font: 释义字体。
-        max_width: 面板内容区宽度。
-        scale: 当前绘制使用的超采样倍数。
-
-    Returns:
-        每行是 ``(文本, 宽度)`` 列表；宽度含条目自身的左右内边距。
+    每个词条最多使用 5 个等宽栏位。短释义占一栏，长释义横跨多栏；
+    下一条释义总是从下一个固定栏位开始，所以不同高度的行也能对齐。
     """
+    if not meanings:
+        meanings = ["暂无释义"]
+
+    gap = MEANING_COLUMN_GAP * scale
+    bullet_width = MEANING_BULLET_SIZE * scale + MEANING_BULLET_GAP * scale
+    ordered = sorted(
+        (" ".join(item.replace("\n", " ").split()) for item in meanings),
+        key=lambda item: (font.getlength(item), item),
+    )
+    columns = min(5, len(ordered))
+    slot_width = max(1.0, (max_width - gap * (columns - 1)) / columns)
+    full_width = slot_width * columns + gap * (columns - 1)
+
     rows: list[list[tuple[str, int]]] = []
     row: list[tuple[str, int]] = []
-    used = 0
-    horizontal_padding = MEANING_PAD_X * 2 * scale
-    gap = MEANING_GAP * scale
-    text_width = max(1, max_width - horizontal_padding)
-    for meaning in meanings:
-        lines = wrap(meaning, font, text_width)
-        measured_width = max(
-            (int(font.getlength(line)) for line in lines),
-            default=0,
-        )
-        width = min(max_width, measured_width + horizontal_padding)
-        if row and used + gap + width > max_width:
+    used_columns = 0
+    for meaning in ordered:
+        measured_width = font.getlength(meaning) + bullet_width
+        span = columns
+        for candidate in range(1, columns + 1):
+            candidate_width = slot_width * candidate + gap * (candidate - 1)
+            if measured_width <= candidate_width + 0.5:
+                span = candidate
+                break
+
+        if measured_width > full_width + 0.5:
+            display = _ellipsize(meaning, font, int(full_width - bullet_width))
+            span = columns
+        else:
+            display = meaning
+
+        if row and used_columns + span > columns:
             rows.append(row)
-            row, used = [], 0
-        if row:
-            used += gap
-        row.append((meaning, width))
-        used += width
+            row = []
+            used_columns = 0
+        item_width = round(slot_width * span + gap * (span - 1))
+        row.append((display, item_width))
+        used_columns += span
+
     if row:
         rows.append(row)
-    return rows
+    return {"rows": rows}
 
 
-def _meaning_row_height(
-    row: list[tuple[str, int]],
-    font: Any,
-    max_width: int,
-    line_height: int,
-    scale: int,
-) -> int:
-    """返回一行释义条目所需的高度。"""
-    text_width = max(1, max_width - MEANING_PAD_X * 2 * scale)
-    padding = MEANING_PAD_Y * 2 * scale
-    return max(
-        (
-            len(wrap(meaning, font, text_width)) * line_height + padding
-            for meaning, _width in row
-        ),
-        default=line_height + padding,
+def _accent_for(index: int, count: int) -> tuple[int, int, int]:
+    """单词条用粉色，多词条沿彩虹顺序取色。"""
+    if count <= 1:
+        return SINGLE_ACCENT
+    return RAINBOW_ACCENTS[index % len(RAINBOW_ACCENTS)]
+
+
+@lru_cache(maxsize=4)
+def _header_icon(size: int) -> Any:
+    """读取并放大指定的 magiconch favicon。"""
+    from PIL import Image
+
+    try:
+        with Image.open(ICON_PATH) as source:
+            icon = source.convert("RGBA")
+            return icon.resize((size, size), Image.Resampling.NEAREST)
+    except (FileNotFoundError, OSError):
+        return None
+
+
+def _background(image_w: int, image_h: int, scale: int) -> Any:
+    """绘制极浅的渐变光斑，给留白增加一点层次。"""
+    from PIL import Image, ImageDraw, ImageFilter
+
+    canvas = Image.new("RGBA", (image_w, image_h), (*PAGE_BG, 255))
+    glow = Image.new("RGBA", (image_w, image_h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(glow)
+    draw.ellipse(
+        (-180 * scale, -130 * scale, 250 * scale, 250 * scale),
+        fill=(210, 219, 255, 48),
     )
+    draw.ellipse(
+        (image_w - 250 * scale, -145 * scale, image_w + 80 * scale, 200 * scale),
+        fill=(255, 221, 235, 42),
+    )
+    draw.ellipse(
+        (
+            image_w - 180 * scale,
+            image_h - 170 * scale,
+            image_w + 120 * scale,
+            image_h + 100 * scale,
+        ),
+        fill=(209, 245, 235, 34),
+    )
+    canvas.alpha_composite(glow.filter(ImageFilter.GaussianBlur(58 * scale)))
+
+    # 两条几乎不可见的弧线只负责平衡右上和左下的空白，不形成边框。
+    lines = Image.new("RGBA", (image_w, image_h), (0, 0, 0, 0))
+    line_draw = ImageDraw.Draw(lines)
+    line_draw.arc(
+        (image_w - 180 * scale, -70 * scale, image_w + 90 * scale, 200 * scale),
+        70,
+        205,
+        fill=(255, 255, 255, 72),
+        width=max(1, scale),
+    )
+    line_draw.arc(
+        (-125 * scale, image_h - 185 * scale, 110 * scale, image_h + 50 * scale),
+        250,
+        35,
+        fill=(255, 255, 255, 54),
+        width=max(1, scale),
+    )
+    canvas.alpha_composite(lines)
+    return canvas
+
+
+def _draw_icon_halo(canvas: Any, x: int, y: int, size: int, scale: int) -> None:
+    """在标题处放置用户指定的 favicon。"""
+    from PIL import ImageDraw
+
+    draw = ImageDraw.Draw(canvas)
+    draw.ellipse(
+        (x, y, x + size, y + size),
+        fill=(*ICON_HALO, 238),
+        outline=(*ICON_HALO_EDGE, 220),
+        width=max(1, scale),
+    )
+    icon = _header_icon(max(1, size - HEADER_ICON_INSET * 2 * scale))
+    if icon is not None:
+        canvas.alpha_composite(
+            icon,
+            (x + HEADER_ICON_INSET * scale, y + HEADER_ICON_INSET * scale),
+        )
 
 
 def _render(text: str) -> bytes:
-    """把文本画成 PNG（同步阻塞，调用方放线程池）。
-
-    Args:
-        text: ``core.format_result`` 的输出。
-
-    Returns:
-        PNG 字节。
-
-    Raises:
-        RuntimeError: 没有可用的中文字体。
-    """
-    from PIL import Image, ImageDraw, ImageFilter
+    """把文本画成 PNG（同步阻塞，调用方放线程池）。"""
+    from PIL import Image, ImageDraw
 
     scale = SUPERSAMPLE
     heading_font = _font(HEADING_SIZE * scale, HEADING_WEIGHT)
     desc_font = _font(DESC_SIZE * scale, DESC_WEIGHT)
     abbr_font = _font(ABBR_SIZE * scale, ABBR_WEIGHT)
+    abbr_meta_font = _font(ABBR_META_SIZE * scale, ABBR_META_WEIGHT)
     meaning_font = _font(MEANING_SIZE * scale, MEANING_WEIGHT)
     text_font = _font(TEXT_SIZE * scale, TEXT_WEIGHT)
 
-    page_pad = PAGE_PADDING * scale
-    panel_pad = PANEL_PADDING * scale
-    border = PANEL_BORDER * scale
-    panel_width = PAGE_WIDTH * scale - page_pad * 2
-    inner_width = panel_width - (panel_pad + border) * 2
-
-    # CSS 的 ``normal`` 行高约为字号的 1.2 倍；直接使用 Pillow 的
-    # ascent + descent 会把面板撑得比原布局高一截。
+    page_left = PAGE_PADDING_X * scale
+    page_top = PAGE_PADDING_TOP * scale
+    content_width = PAGE_WIDTH * scale - page_left * 2
+    header_icon_size = HEADER_ICON_SIZE * scale
     heading_h = round(HEADING_SIZE * NORMAL_LINE_HEIGHT) * scale
     desc_h = round(DESC_SIZE * NORMAL_LINE_HEIGHT) * scale
     abbr_h = round(ABBR_SIZE * NORMAL_LINE_HEIGHT) * scale
-    meaning_h = round(MEANING_SIZE * NORMAL_LINE_HEIGHT) * scale
-    meaning_row_gap = MEANING_GAP * scale
+    abbr_meta_h = round(ABBR_META_SIZE * NORMAL_LINE_HEIGHT) * scale
+    meaning_h = round(MEANING_SIZE * MEANING_LINE_HEIGHT) * scale
     text_line_h = round(TEXT_SIZE * TEXT_LINE_HEIGHT) * scale
+    header_text_h = heading_h + HEADING_GAP * scale + desc_h
+    header_h = max(header_icon_size, header_text_h)
 
-    # 第一遍：量出每块高度，算出面板总高
-    laid: list[tuple[str, Any, int]] = []
-    height = heading_h + HEADING_GAP * scale + desc_h + DESC_GAP * scale
-    for kind, content, meanings in _parse(text):
+    blocks = _parse(text)
+    block_count = sum(kind == "abbr" for kind, _content, _meanings in blocks)
+    if block_count == 0:
+        block_count = len(blocks)
+
+    laid: list[tuple[str, dict[str, Any]]] = []
+    content_y = header_h + DESC_GAP * scale
+    total_height = content_y
+    for block_index, (kind, content, meanings) in enumerate(blocks):
+        if block_index:
+            total_height += ENTRY_GAP * scale
+
         if kind == "abbr":
-            abbr_lines = wrap(content, abbr_font, inner_width)
-            rows = _pack_meanings(
-                meanings,
-                meaning_font,
-                inner_width,
-                scale=scale,
+            grid_width = content_width - (ENTRY_ACCENT_WIDTH + 18) * scale
+            grid = _pack_meanings(meanings, meaning_font, grid_width, scale=scale)
+            entry_title_h = abbr_h + 2 * scale + abbr_meta_h
+            row_count = len(grid["rows"])
+            grid_h = row_count * meaning_h + max(
+                0, row_count - 1
+            ) * MEANING_ROW_GAP * scale
+            entry_height = (
+                ENTRY_TOP_PAD * scale
+                + entry_title_h
+                + ENTRY_TITLE_GAP * scale
+                + grid_h
+                + ENTRY_BOTTOM_PAD * scale
             )
-            laid.append(("abbr", (abbr_lines, rows), 0))
-            height += len(abbr_lines) * abbr_h
-            if rows:
-                height += MEANING_TOP_GAP * scale
-                height += sum(
-                    _meaning_row_height(
-                        row,
-                        meaning_font,
-                        inner_width,
-                        meaning_h,
-                        scale,
-                    )
-                    for row in rows
+            laid.append(
+                (
+                    "abbr",
+                    {
+                        "name": content,
+                        "grid": grid,
+                        "height": entry_height,
+                        "title_height": entry_title_h,
+                    },
                 )
-                height += (len(rows) - 1) * meaning_row_gap
-            height += ABBR_GAP * scale
+            )
         else:
-            lines = wrap(content, text_font, inner_width)
-            laid.append(("text", lines, 0))
-            height += len(lines) * text_line_h + TEXT_GAP * scale
+            line = " ".join(content.replace("\n", " ").split())
+            display = _ellipsize(line, text_font, content_width - 20 * scale)
+            entry_height = (
+                ENTRY_TOP_PAD * scale + text_line_h + ENTRY_BOTTOM_PAD * scale
+            )
+            laid.append(("text", {"text": display, "height": entry_height}))
+        total_height += entry_height
 
-    panel_h = height + panel_pad * 2
-    image_w = PAGE_WIDTH * scale
-    image_h = panel_h + page_pad * 2
+    if not laid:
+        # 让异常输入仍然得到一张可读图片。
+        laid.append(
+            ("text", {"text": "未找到翻译结果。", "height": text_line_h + 27 * scale})
+        )
+        total_height += text_line_h + 27 * scale
 
-    canvas = Image.new("RGBA", (image_w, image_h), (*PAGE_BG, 255))
-
-    # 面板阴影：单独画一层再模糊，比直接描边自然
-    shadow = Image.new("RGBA", (image_w, image_h), (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).rounded_rectangle(
-        (
-            page_pad,
-            page_pad + PANEL_SHADOW_OFFSET * scale,
-            page_pad + panel_width,
-            page_pad + panel_h + PANEL_SHADOW_OFFSET * scale,
-        ),
-        radius=PANEL_RADIUS * scale,
-        fill=(*SHADOW_RGB, PANEL_SHADOW_ALPHA),
-    )
-    canvas.alpha_composite(
-        shadow.filter(ImageFilter.GaussianBlur(PANEL_SHADOW_BLUR * scale))
-    )
-
+    image_h = page_top + total_height + PAGE_PADDING_BOTTOM * scale
+    canvas = _background(PAGE_WIDTH * scale, image_h, scale)
     draw = ImageDraw.Draw(canvas)
-    draw.rounded_rectangle(
-        (page_pad, page_pad, page_pad + panel_width, page_pad + panel_h),
-        radius=PANEL_RADIUS * scale,
-        fill=(*PANEL_BG, 255),
-        outline=(*PANEL_EDGE, 255),
-        width=border,
-    )
 
-    left = page_pad + panel_pad + border
-    y = page_pad + panel_pad
-
+    # 标题使用单个柔和圆形作为背景，内容区保持平面留白。
+    icon_x = page_left
+    icon_y = page_top
+    _draw_icon_halo(canvas, icon_x, icon_y, header_icon_size, scale)
+    title_x = icon_x + header_icon_size + HEADER_ICON_GAP * scale
     draw.text(
-        (left, y + _text_top(heading_font, heading_h)),
+        (title_x, page_top + _text_top(heading_font, heading_h)),
         HEADING_TEXT,
         font=heading_font,
         fill=HEADING_FG,
     )
-    y += heading_h + HEADING_GAP * scale
+    desc_y = page_top + heading_h + HEADING_GAP * scale
     draw.text(
-        (left, y + _text_top(desc_font, desc_h)),
+        (title_x, desc_y + _text_top(desc_font, desc_h)),
         DESC_TEXT,
         font=desc_font,
         fill=DESC_FG,
     )
-    y += desc_h + DESC_GAP * scale
 
-    for kind, payload, _unused in laid:
+    y = page_top + content_y
+    draw.line(
+        (
+            page_left,
+            y - ENTRY_DIVIDER_GAP * scale,
+            page_left + content_width,
+            y - ENTRY_DIVIDER_GAP * scale,
+        ),
+        fill=(*DIVIDER, 255),
+        width=max(1, scale),
+    )
+
+    entry_index = 0
+    for laid_index, (kind, payload) in enumerate(laid):
+        entry_top = y
+        entry_height = payload["height"]
+        accent = _accent_for(entry_index, block_count)
+        accent_x = page_left
+        draw.rounded_rectangle(
+            (
+                accent_x,
+                entry_top + ENTRY_TOP_PAD * scale,
+                accent_x + ENTRY_ACCENT_WIDTH * scale,
+                entry_top + entry_height - ENTRY_BOTTOM_PAD * scale,
+            ),
+            radius=ENTRY_ACCENT_RADIUS * scale,
+            fill=(*accent, 255),
+        )
+
         if kind == "abbr":
-            abbr_lines, rows = payload
-            for line in abbr_lines:
-                draw.text(
-                    (left, y + _text_top(abbr_font, abbr_h)),
-                    line,
-                    font=abbr_font,
-                    fill=ABBR_FG,
-                )
-                y += abbr_h
-            if rows:
-                y += MEANING_TOP_GAP * scale
-                for row in rows:
-                    x = left
-                    row_height = _meaning_row_height(
-                        row,
-                        meaning_font,
-                        inner_width,
-                        meaning_h,
-                        scale,
+            name = payload["name"]
+            title_x = page_left + 18 * scale
+            title_y = entry_top + ENTRY_TOP_PAD * scale
+            name_display = _ellipsize(name, abbr_font, content_width - 18 * scale)
+            draw.text(
+                (title_x, title_y + _text_top(abbr_font, abbr_h)),
+                name_display,
+                font=abbr_font,
+                fill=ABBR_FG,
+            )
+            grid = payload["grid"]
+            # The count is kept separate from the list so no decorative dot is
+            # needed between the abbreviation and its metadata.
+            meaning_count = sum(len(row) for row in grid["rows"])
+            meta = f"共 {meaning_count} 条释义"
+            meta_y = title_y + abbr_h + 2 * scale
+            draw.text(
+                (title_x, meta_y + _text_top(abbr_meta_font, abbr_meta_h)),
+                meta,
+                font=abbr_meta_font,
+                fill=DESC_FG,
+            )
+
+            grid_x = title_x
+            grid_y = title_y + payload["title_height"] + ENTRY_TITLE_GAP * scale
+            for row_index, row in enumerate(grid["rows"]):
+                x = grid_x
+                for display, item_width in row:
+                    bullet_y = grid_y + meaning_h // 2
+                    bullet_r = MEANING_BULLET_SIZE * scale // 2
+                    bullet_x = x + bullet_r
+                    draw.ellipse(
+                        (
+                            bullet_x - bullet_r,
+                            bullet_y - bullet_r,
+                            bullet_x + bullet_r,
+                            bullet_y + bullet_r,
+                        ),
+                        fill=(*accent, 255),
                     )
-                    for meaning, width in row:
-                        lines = wrap(
-                            meaning,
-                            meaning_font,
-                            max(1, inner_width - MEANING_PAD_X * 2 * scale),
-                        )
-                        for line_index, line in enumerate(lines):
-                            draw.text(
-                                (
-                                    x + MEANING_PAD_X * scale,
-                                    y
-                                    + MEANING_PAD_Y * scale
-                                    + line_index * meaning_h
-                                    + _text_top(meaning_font, meaning_h),
-                                ),
-                                line,
-                                font=meaning_font,
-                                fill=DESC_FG,
-                            )
-                        x += width + MEANING_GAP * scale
-                    y += row_height + meaning_row_gap
-                y -= meaning_row_gap
-            y += ABBR_GAP * scale
+                    draw.text(
+                        (
+                            x + (MEANING_BULLET_SIZE + MEANING_BULLET_GAP) * scale,
+                            grid_y + _text_top(meaning_font, meaning_h),
+                        ),
+                        display,
+                        font=meaning_font,
+                        fill=TEXT_FG,
+                    )
+                    x += item_width + MEANING_COLUMN_GAP * scale
+                grid_y += meaning_h
+                if row_index < len(grid["rows"]) - 1:
+                    grid_y += MEANING_ROW_GAP * scale
+            entry_index += 1
         else:
-            for line in payload:
-                draw.text(
-                    (left, y + _text_top(text_font, text_line_h)),
-                    line,
-                    font=text_font,
-                    fill=TEXT_FG,
-                )
-                y += text_line_h
-            y += TEXT_GAP * scale
+            text_x = page_left + 18 * scale
+            text_y = entry_top + ENTRY_TOP_PAD * scale
+            draw.text(
+                (text_x, text_y + _text_top(text_font, text_line_h)),
+                payload["text"],
+                font=text_font,
+                fill=TEXT_FG,
+            )
+
+        y = entry_top + entry_height
+        if laid_index < len(laid) - 1:
+            divider_y = y + ENTRY_GAP * scale // 2
+            draw.line(
+                (
+                    page_left + 18 * scale,
+                    divider_y,
+                    page_left + content_width,
+                    divider_y,
+                ),
+                fill=(*DIVIDER, 255),
+                width=max(1, scale),
+            )
+            y += ENTRY_GAP * scale
 
     final = canvas.convert("RGB").resize(
         (PAGE_WIDTH, image_h // scale), Image.Resampling.LANCZOS
@@ -564,15 +723,5 @@ def _render(text: str) -> bytes:
 
 
 async def text_to_image(text: str) -> bytes:
-    """将文本渲染为 PNG 图片。
-
-    Args:
-        text: 要渲染的文本，通常来自 ``core.format_result``。
-
-    Returns:
-        PNG 格式的图片字节。
-
-    Raises:
-        RuntimeError: 没有可用的中文字体。
-    """
+    """将文本渲染为 PNG 图片。"""
     return await asyncio.to_thread(_render, text)
