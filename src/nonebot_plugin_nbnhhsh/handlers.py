@@ -9,6 +9,7 @@ NoneBot2 事件处理逻辑，包含：
 """
 
 import re
+import logging
 
 from nonebot import CommandGroup, on_message
 from nonebot.rule import Rule
@@ -21,19 +22,26 @@ from .core import guess, submit, format_result
 from .config import plugin_config
 from .render import text_to_image
 
+logger = logging.getLogger("nonebot_plugin_nbnhhsh")
+
 
 async def _reply(matcher: Matcher, text: str) -> None:
     """根据配置以文字或图片形式发送结果。
+
+    画图失败（没有中文字体、Pillow 缺失等）时退回发文字，不让回复断掉。
 
     Args:
         matcher: 当前事件对应的 matcher。
         text: 待发送的文本内容。
     """
     if plugin_config.nbnhhsh_text2pic:
-        img = await text_to_image(text)
-        await matcher.finish(MessageSegment.image(img))
-    else:
-        await matcher.finish(text)
+        try:
+            img = await text_to_image(text)
+        except Exception as e:  # 画图失败不能影响回复
+            logger.warning(f"[nbnhhsh] 渲染图片失败，改发文字：{e}")
+        else:
+            await matcher.finish(MessageSegment.image(img))
+    await matcher.finish(text)
 
 
 def _strip(msg: Message) -> str:
@@ -168,7 +176,11 @@ async def handle_auto(matcher: Matcher, msg: Message = EventMessage()) -> None:
 
     result = format_result(visible)
     if plugin_config.nbnhhsh_text2pic:
-        img = await text_to_image(result)
-        await matcher.send(MessageSegment.image(img))
-    else:
-        await matcher.send(result)
+        try:
+            img = await text_to_image(result)
+        except Exception as e:  # 画图失败不能影响回复
+            logger.warning(f"[nbnhhsh] 渲染图片失败，改发文字：{e}")
+        else:
+            await matcher.send(MessageSegment.image(img))
+            return
+    await matcher.send(result)

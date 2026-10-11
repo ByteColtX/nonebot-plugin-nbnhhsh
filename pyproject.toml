@@ -9,7 +9,8 @@ dependencies = [
   "httpx>=0.23.0,<1.0.0",
   "nonebot2>=2.4.3,<3.0.0",
   "nonebot-adapter-onebot>=2.4.0,<3.0.0",
-  "nonebot-plugin-htmlkit>=0.1.0rc5,<1.0.0",
+  "pillow>=10.0.0,<13.0.0",
+  "platformdirs>=4.0.0",
 ]
 
 [project.urls]
