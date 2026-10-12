@@ -21,8 +21,15 @@
 
 ## 🎨 效果图
 
-<img src="./images/e3e480bd-fea8-4448-964d-7a645499113f.png" alt="效果图1" width="220"/>
-<img src="./images/7dc9282a5bf69d644ddb4eb3ddd52e34.png" alt="图片渲染效果图" width="460"/>
+<table>
+  <tr>
+    <td align="center"><img src="./images/CleanShot 2026-10-13 at 00.18.15@2x.png" alt="主效果图" width="420"/></td>
+    <td align="center" rowspan="2"><img src="./images/e3e480bd-fea8-4448-964d-7a645499113f.png" alt="文本模式效果图" width="310"/></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./images/fea2d34f028dd6a8e91627da94ce9adc.png" alt="图片渲染效果图" width="420"/></td>
+  </tr>
+</table>
 
 
 ## 💿 安装
@@ -103,7 +110,7 @@
 | `NBNHHSH_AUTO` | 否 | `false` | 开启自动划词翻译，bot 会自动识别消息中的缩写并回复 |
 | `NBNHHSH_AUTO_MIN_LEN` | 否 | `2` | 自动划词触发的最短缩写长度 |
 | `NBNHHSH_TIMEOUT` | 否 | `10` | 设置 HTTP 请求的超时时间（秒） |
-| `NBNHHSH_TEXT2PIC` | 否 | `false` | 是否将翻译结果以图片形式发送，避免因敏感词导致消息无法发送 |
+| `NBNHHSH_TEXT2PIC` | 否 | `true` | 是否将翻译结果以图片形式发送，避免因敏感词导致消息无法发送 |
 
 同时需要在 `.env` 中配置命令分隔符（空格）以支持子命令：
 
