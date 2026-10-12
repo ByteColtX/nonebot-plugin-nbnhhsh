@@ -85,7 +85,7 @@ RAINBOW_ACCENTS: tuple[tuple[int, int, int], ...] = (
 SINGLE_ACCENT = RAINBOW_ACCENTS[0]
 
 HEADING_TEXT = "能不能好好说话？"
-DESC_TEXT = "数据源：神奇的海螺"
+DESC_TEXT = "数据源：神奇海螺试验场"
 
 ICON_PATH = Path(__file__).with_name("assets") / "magiconch-favicon.ico"
 

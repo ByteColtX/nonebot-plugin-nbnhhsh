@@ -21,7 +21,7 @@ from fontTools import subset  # type: ignore[import-untyped]
 
 # 测试里会画到的所有字符（含标点、拉丁字母与数字）
 CHARS = (
-    "能不能好好说话？数据源：神奇的海螺"
+    "能不能好好说话？数据源：神奇海螺试验场"
     "未找到翻译结果。暂可能是"
     "永远的神单身、你我他她它"
     "abcdefghijklmnopqrstuvwxyz"
