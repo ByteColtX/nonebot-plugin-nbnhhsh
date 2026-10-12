@@ -44,21 +44,38 @@ jobs:
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
-      - name: Create Release if not exists
+      - name: Create or update release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ steps.version.outputs.TAG_NAME }}
         run: |
+          NOTES_FILE=".github/release-notes/${TAG_NAME}.md"
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
-            echo "Release $TAG_NAME already exists"
-          elif [ -f ".github/release-notes/${TAG_NAME}.md" ]; then
+            # Release Drafter 会预建同名草稿，直接跳过会留下未发布的草稿；
+            # 这里改为更新正文并发布，保证 release 一定处于已发布状态。
+            echo "Release $TAG_NAME already exists, updating and publishing"
+            if [ -f "$NOTES_FILE" ]; then
+              gh release edit "$TAG_NAME" \
+                --title "$TAG_NAME" \
+                --notes-file "$NOTES_FILE" \
+                --draft=false \
+                --latest
+            else
+              gh release edit "$TAG_NAME" \
+                --title "$TAG_NAME" \
+                --draft=false \
+                --latest
+            fi
+          elif [ -f "$NOTES_FILE" ]; then
             gh release create "$TAG_NAME" \
               --title "$TAG_NAME" \
-              --notes-file ".github/release-notes/${TAG_NAME}.md"
+              --notes-file "$NOTES_FILE" \
+              --latest
           else
             gh release create "$TAG_NAME" \
               --title "$TAG_NAME" \
-              --generate-notes
+              --generate-notes \
+              --latest
           fi
 
       - name: Upload Release Asset
