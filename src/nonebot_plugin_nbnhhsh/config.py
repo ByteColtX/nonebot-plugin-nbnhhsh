@@ -21,7 +21,7 @@ class Config(BaseModel):
     nbnhhsh_auto: bool = False
     nbnhhsh_auto_min_len: int = 2
     nbnhhsh_timeout: int = 10
-    nbnhhsh_text2pic: bool = False
+    nbnhhsh_text2pic: bool = True
 
 
 plugin_config: Config = get_plugin_config(Config)
