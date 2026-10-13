@@ -17,6 +17,7 @@ __plugin_meta__ = PluginMetadata(
     usage=(
         "/nbnhhsh <缩写>                     翻译缩写\n"
         "/nbnhhsh submit <缩写> <对应文字>    提交补充翻译\n"
+        "/nbnhhsh help                       查看指令列表\n"
     ),
     type="application",  # library
     homepage="https://github.com/ByteColtX/nonebot-plugin-nbnhhsh",
