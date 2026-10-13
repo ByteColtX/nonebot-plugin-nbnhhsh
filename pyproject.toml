@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-plugin-nbnhhsh"
-version = "0.2.2"
+version = "0.2.3"
 description = "「能不能好好说话？」拼音首字母缩写翻译 NoneBot2 插件。"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -42,7 +42,7 @@ build-backend = "uv_build"
 nonebug = { git = "https://github.com/nonebot/nonebug" }
 
 [tool.bumpversion]
-current_version = "0.2.2"
+current_version = "0.2.3"
 commit = true
 message = "release: bump version from {current_version} to {new_version}"
 tag = true
