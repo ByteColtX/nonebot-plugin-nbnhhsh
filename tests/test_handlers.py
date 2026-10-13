@@ -10,10 +10,9 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from fake import fake_group_message_event_v11
 from nonebug import App
 from nonebot.adapters.onebot.v11 import Message
-
-from tests.fake import fake_group_message_event_v11
 
 
 def _patch_io(monkeypatch: pytest.MonkeyPatch, handlers: Any) -> dict[str, list[Any]]:
