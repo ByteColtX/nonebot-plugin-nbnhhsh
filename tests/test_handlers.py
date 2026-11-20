@@ -17,10 +17,11 @@ from nonebot.adapters.onebot.v11 import Message
 
 def _patch_io(monkeypatch: pytest.MonkeyPatch, handlers: Any) -> dict[str, list[Any]]:
     """拦截网络与渲染，记录 guess/submit 的调用参数。"""
-    calls: dict[str, list[Any]] = {"guess": [], "submit": []}
+    calls: dict[str, list[Any]] = {"guess": [], "submit": [], "kwargs": []}
 
-    async def fake_guess(text: str, timeout: int = 10) -> list[Any]:
+    async def fake_guess(text: str, timeout: int = 10, min_len: int = 2) -> list[Any]:
         calls["guess"].append(text)
+        calls["kwargs"].append({"timeout": timeout, "min_len": min_len})
         return []
 
     async def fake_submit(name: str, text: str, timeout: int = 10) -> None:
@@ -114,7 +115,66 @@ async def test_plain_query_still_works(
         ctx.should_finished(handlers.nbnhhsh_cmd)
 
     assert calls["guess"] == ["yyds"]
+    assert calls["kwargs"] == [{"timeout": 10, "min_len": 2}]
     assert calls["submit"] == []
+
+
+async def test_query_uses_configured_timeout(
+    app: App, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """/nbnhhsh <缩写> 应带上 NBNHHSH_TIMEOUT 配置。"""
+    from nonebot_plugin_nbnhhsh import handlers
+
+    calls = _patch_io(monkeypatch, handlers)
+    monkeypatch.setattr(handlers.plugin_config, "nbnhhsh_timeout", 42)
+
+    async with app.test_matcher(handlers.nbnhhsh_cmd) as ctx:
+        bot = ctx.create_bot()
+        event = fake_group_message_event_v11(message=Message("/nbnhhsh yyds"))
+        ctx.receive_event(bot, event)
+        ctx.should_call_send(event, "未找到翻译结果。", True)
+        ctx.should_finished(handlers.nbnhhsh_cmd)
+
+    assert calls["kwargs"] == [{"timeout": 42, "min_len": 2}]
+
+
+async def test_question_uses_configured_timeout(
+    app: App, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """自然语言问句同样应带上 NBNHHSH_TIMEOUT 配置。"""
+    from nonebot_plugin_nbnhhsh import handlers
+
+    calls = _patch_io(monkeypatch, handlers)
+    monkeypatch.setattr(handlers.plugin_config, "nbnhhsh_timeout", 42)
+
+    async with app.test_matcher(handlers.question_matcher) as ctx:
+        bot = ctx.create_bot()
+        event = fake_group_message_event_v11(message=Message("yyds是什么"))
+        ctx.receive_event(bot, event)
+        ctx.should_call_send(event, "未找到翻译结果。", True)
+        ctx.should_finished(handlers.question_matcher)
+
+    assert calls["kwargs"] == [{"timeout": 42, "min_len": 2}]
+
+
+async def test_auto_uses_timeout_and_min_len(
+    app: App, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """自动划词应同时应用超时与最小缩写长度配置。"""
+    from nonebot_plugin_nbnhhsh import handlers
+
+    calls = _patch_io(monkeypatch, handlers)
+    monkeypatch.setattr(handlers.plugin_config, "nbnhhsh_auto", True)
+    monkeypatch.setattr(handlers.plugin_config, "nbnhhsh_auto_min_len", 3)
+    monkeypatch.setattr(handlers.plugin_config, "nbnhhsh_timeout", 42)
+
+    async with app.test_matcher(handlers.auto_matcher) as ctx:
+        bot = ctx.create_bot()
+        event = fake_group_message_event_v11(message=Message("abc de"))
+        ctx.receive_event(bot, event)
+
+    assert calls["guess"] == ["abc de"]
+    assert calls["kwargs"] == [{"timeout": 42, "min_len": 3}]
 
 
 async def test_no_args_shows_help(app: App, monkeypatch: pytest.MonkeyPatch) -> None:

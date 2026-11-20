@@ -18,8 +18,9 @@ from nonebot.matcher import Matcher, matchers
 from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11 import MessageSegment
 
-from .core import guess, submit, format_result
+from .core import NoAbbreviationError, guess, submit, format_result
 from .config import plugin_config
+from .parser import has_abbr
 from .render import text_to_image
 
 logger = logging.getLogger("nonebot_plugin_nbnhhsh")
@@ -169,8 +170,8 @@ async def handle_nbnhhsh(matcher: Matcher, arg: Message = CommandArg()) -> None:
         return
 
     try:
-        tags = await guess(text)
-    except ValueError:
+        tags = await guess(text, timeout=plugin_config.nbnhhsh_timeout)
+    except NoAbbreviationError:
         await matcher.finish("未找到有效缩写（需含 2 个以上连续字母/数字）")
     except Exception as e:
         await matcher.finish(f"查询失败：{e}")
@@ -215,7 +216,7 @@ async def handle_question(matcher: Matcher, msg: Message = EventMessage()) -> No
             seen.add(word)
 
     try:
-        tags = await guess(",".join(abbrs))
+        tags = await guess(",".join(abbrs), timeout=plugin_config.nbnhhsh_timeout)
     except Exception as e:
         await matcher.finish(f"查询失败：{e}")
 
@@ -227,9 +228,7 @@ def _auto_rule() -> Rule:
         if not plugin_config.nbnhhsh_auto:
             return False
         text = msg.extract_plain_text()
-        return bool(
-            re.search(rf"[a-zA-Z0-9]{{{plugin_config.nbnhhsh_auto_min_len},}}", text)
-        )
+        return has_abbr(text, plugin_config.nbnhhsh_auto_min_len)
 
     return Rule(_check)
 
@@ -241,7 +240,11 @@ auto_matcher = on_message(rule=_auto_rule(), priority=99, block=False)
 async def handle_auto(matcher: Matcher, msg: Message = EventMessage()) -> None:
     text = msg.extract_plain_text().strip()
     try:
-        tags = await guess(text, timeout=plugin_config.nbnhhsh_timeout)
+        tags = await guess(
+            text,
+            timeout=plugin_config.nbnhhsh_timeout,
+            min_len=plugin_config.nbnhhsh_auto_min_len,
+        )
     except Exception:
         return
 
