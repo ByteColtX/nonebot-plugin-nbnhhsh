@@ -7,10 +7,16 @@ nonebot_plugin_nbnhhsh.api
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
 API_BASE = "https://lab.magiconch.com/api/nbnhhsh/"
+
+
+def _translation_url(name: str) -> str:
+    """构造提交接口 URL，缩写按路径段转义，防止斜杠、问号等改变路由。"""
+    return f"{API_BASE}translation/{quote(name, safe='')}"
 
 
 async def api_guess(text: str, timeout: int = 10) -> list[dict[str, Any]]:
@@ -45,7 +51,7 @@ async def api_submit(name: str, text: str, timeout: int = 10) -> None:
     """
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(
-            API_BASE + f"translation/{name}",
+            _translation_url(name),
             json={"text": text},
             headers={"Content-Type": "application/json"},
         )
