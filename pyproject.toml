@@ -104,10 +104,14 @@ addopts = [
   "-ra",                   # 显示所有测试结果摘要
   "-s",                    # 显示打印信息
   "-v",                    # 详细输出
+  "-m", "not integration",  # 默认跳过联网用例
 ]
 pythonpath = ["src"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
+markers = [
+  "integration: 需要访问真实网络接口，默认不运行",
+]
 
 [tool.ruff]
 line-length = 88

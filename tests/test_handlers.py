@@ -99,30 +99,10 @@ async def test_submit_missing_args(app: App, monkeypatch: pytest.MonkeyPatch) ->
     assert calls["submit"] == []
 
 
-async def test_plain_query_still_works(
-    app: App, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """/nbnhhsh yyds 仍走查询逻辑。"""
-    from nonebot_plugin_nbnhhsh import handlers
-
-    calls = _patch_io(monkeypatch, handlers)
-
-    async with app.test_matcher(handlers.nbnhhsh_cmd) as ctx:
-        bot = ctx.create_bot()
-        event = fake_group_message_event_v11(message=Message("/nbnhhsh yyds"))
-        ctx.receive_event(bot, event)
-        ctx.should_call_send(event, "未找到翻译结果。", True)
-        ctx.should_finished(handlers.nbnhhsh_cmd)
-
-    assert calls["guess"] == ["yyds"]
-    assert calls["kwargs"] == [{"timeout": 10, "min_len": 2}]
-    assert calls["submit"] == []
-
-
 async def test_query_uses_configured_timeout(
     app: App, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """/nbnhhsh <缩写> 应带上 NBNHHSH_TIMEOUT 配置。"""
+    """/nbnhhsh <缩写> 走查询逻辑并带上 NBNHHSH_TIMEOUT 配置。"""
     from nonebot_plugin_nbnhhsh import handlers
 
     calls = _patch_io(monkeypatch, handlers)
@@ -135,7 +115,9 @@ async def test_query_uses_configured_timeout(
         ctx.should_call_send(event, "未找到翻译结果。", True)
         ctx.should_finished(handlers.nbnhhsh_cmd)
 
+    assert calls["guess"] == ["yyds"]
     assert calls["kwargs"] == [{"timeout": 42, "min_len": 2}]
+    assert calls["submit"] == []
 
 
 async def test_question_uses_configured_timeout(
