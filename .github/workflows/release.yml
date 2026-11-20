@@ -35,7 +35,7 @@ jobs:
         if: steps.version.outputs.VERSION != steps.version.outputs.TAG_VERSION
         run: exit 1
 
-      - name: Build 
+      - name: Build
         run: |
           uv build
 
