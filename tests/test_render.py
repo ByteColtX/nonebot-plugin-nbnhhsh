@@ -51,23 +51,21 @@ async def test_more_meanings_make_a_taller_image() -> None:
     assert many > one
 
 
-def test_wrap_breaks_chinese_by_char() -> None:
-    """中文按字断行，每行都不超过给定宽度。"""
+def test_ellipsize_keeps_short_text() -> None:
+    """短文本原样返回。"""
     font = render._font(TEST_FONT, render.TEXT_SIZE)
-    lines = render.wrap("能不能好好说话能不能好好说话能不能好好说话", font, 200)
 
-    assert len(lines) > 1
-    assert all(font.getlength(line) <= 200 for line in lines)
-    assert "".join(lines) == "能不能好好说话能不能好好说话能不能好好说话"
+    assert render._ellipsize("永远的神", font, 10_000) == "永远的神"
 
 
-def test_wrap_keeps_latin_words_whole() -> None:
-    """英文单词整体挪到下一行，不从中间劈开。"""
+def test_ellipsize_truncates_long_text() -> None:
+    """超宽文本截断并加省略号，结果不超过给定宽度。"""
     font = render._font(TEST_FONT, render.TEXT_SIZE)
-    width = int(font.getlength("world")) + 1
-    lines = render.wrap("hello world", font, width)
+    max_width = int(font.getlength("永远的神")) + 1
+    result = render._ellipsize("永远的神永远的神永远的神", font, max_width)
 
-    assert lines == ["hello", "world"]
+    assert result.endswith("…")
+    assert font.getlength(result) <= max_width
 
 
 def test_missing_font_raises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

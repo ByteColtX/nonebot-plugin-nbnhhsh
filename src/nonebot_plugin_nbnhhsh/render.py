@@ -23,6 +23,8 @@ from typing import Any
 from pathlib import Path
 from functools import lru_cache
 
+from platformdirs import user_cache_dir
+
 logger = logging.getLogger("nonebot_plugin_nbnhhsh.render")
 
 # ── 版面参数 ────────────────────────────────────────────────────────────────
@@ -115,8 +117,6 @@ FONT_MIN_BYTES = 1_000_000
 
 # ``[缩写] 释义1、释义2`` 形式的行，其余行按普通文本画。
 _ABBR_RE = re.compile(r"^\[(?P<name>[^\]]+)\]\s*(?P<rest>.*)$")
-# 折行的最小单元：连续字母数字算一个词，其余（含中文）逐字处理。
-_TOKEN_RE = re.compile(r"[A-Za-z0-9]+|\s+|.", re.DOTALL)
 
 # 运行时找到的字体文件（系统字体或下载缓存）。
 _FONT_PATH: Path | None = None
@@ -127,12 +127,8 @@ def _cache_dir() -> Path:
     """返回字体缓存目录。
 
     Returns:
-        用户缓存目录下的插件专属目录；platformdirs 缺失时退回 ``~/.cache``。
+        用户缓存目录下的插件专属目录。
     """
-    try:
-        from platformdirs import user_cache_dir
-    except ImportError:  # pragma: no cover - platformdirs 是硬依赖，防御性分支
-        return Path.home() / ".cache" / "nonebot-plugin-nbnhhsh"
     return Path(user_cache_dir("nonebot-plugin-nbnhhsh"))
 
 
@@ -142,7 +138,7 @@ def _is_font_file(path: Path) -> bool:
         from PIL import ImageFont
 
         ImageFont.truetype(str(path), 16)
-    except (ImportError, OSError, ValueError):
+    except (OSError, ValueError):
         return False
     return True
 
@@ -246,19 +242,6 @@ def _font(path: Path, size: int, weight: int = 400) -> Any:
     return font
 
 
-def _line_height(font: Any) -> int:
-    """取字体的行高。
-
-    Args:
-        font: 字体对象。
-
-    Returns:
-        上升部与下降部之和。
-    """
-    ascent, descent = font.getmetrics()
-    return ascent + descent
-
-
 def _text_top(font: Any, line_h: int) -> int:
     """算出让文字在行盒里垂直居中的偏移。
 
@@ -271,45 +254,6 @@ def _text_top(font: Any, line_h: int) -> int:
     """
     ascent, descent = font.getmetrics()
     return max(0, (line_h - ascent - descent) // 2)
-
-
-def wrap(text: str, font: Any, max_width: int) -> list[str]:
-    """按宽度折行：中文逐字断，英文单词整体挪到下一行。
-
-    Args:
-        text: 原始文本（不含换行）。
-        font: 字体对象。
-        max_width: 每行最大像素宽度。
-
-    Returns:
-        折行后的文本列表；空文本返回空列表。
-    """
-    lines: list[str] = []
-    current = ""
-    for token in _TOKEN_RE.findall(text):
-        if font.getlength(current + token) <= max_width:
-            current += token
-            continue
-        if current.strip():
-            lines.append(current.rstrip())
-        current = ""
-        if token.isspace():
-            continue
-        if font.getlength(token) <= max_width:
-            current = token
-            continue
-        # 单个词就超过一行宽度：只能按字符硬切
-        piece = ""
-        for char in token:
-            if font.getlength(piece + char) <= max_width:
-                piece += char
-            else:
-                lines.append(piece)
-                piece = char
-        current = piece
-    if current.strip():
-        lines.append(current.rstrip())
-    return lines
 
 
 def _parse(text: str) -> list[tuple[str, str, list[str]]]:
@@ -342,15 +286,10 @@ def _parse(text: str) -> list[tuple[str, str, list[str]]]:
 def _ellipsize(text: str, font: Any, max_width: int) -> str:
     """在单行内截短文本，保证释义永远不会被折行。"""
     text = " ".join(text.replace("\n", " ").split())
-    if max_width <= 0:
-        return ""
     if font.getlength(text) <= max_width:
         return text
 
     ellipsis = "…"
-    ellipsis_width = font.getlength(ellipsis)
-    if ellipsis_width > max_width:
-        return ellipsis
 
     left, right = 0, len(text)
     while left < right:
