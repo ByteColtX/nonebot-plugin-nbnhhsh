@@ -336,7 +336,6 @@ def _parse(text: str) -> list[tuple[str, str, list[str]]]:
     return blocks
 
 
-
 def _ellipsize(text: str, font: Any, max_width: int) -> str:
     """在单行内截短文本，保证释义永远不会被折行。"""
     text = " ".join(text.replace("\n", " ").split())
@@ -545,9 +544,9 @@ def _render(text: str) -> bytes:
             grid = _pack_meanings(meanings, meaning_font, grid_width, scale=scale)
             entry_title_h = abbr_h + 2 * scale + abbr_meta_h
             row_count = len(grid["rows"])
-            grid_h = row_count * meaning_h + max(
-                0, row_count - 1
-            ) * MEANING_ROW_GAP * scale
+            grid_h = (
+                row_count * meaning_h + max(0, row_count - 1) * MEANING_ROW_GAP * scale
+            )
             entry_height = (
                 ENTRY_TOP_PAD * scale
                 + entry_title_h
