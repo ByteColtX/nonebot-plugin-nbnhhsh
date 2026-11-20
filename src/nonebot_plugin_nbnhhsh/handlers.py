@@ -10,6 +10,7 @@ NoneBot2 事件处理逻辑，包含：
 
 import re
 import logging
+from typing import NoReturn
 
 from nonebot import CommandGroup, get_driver, on_message
 from nonebot.rule import Rule, CommandRule
@@ -84,7 +85,7 @@ _SUBMIT_USAGE = (
 )
 
 
-async def _do_submit(matcher: Matcher, arg: str) -> None:
+async def _do_submit(matcher: Matcher, arg: str) -> NoReturn:
     """处理提交逻辑，供 ``/nbnhhsh submit`` 与 submit 子命令共用。
 
     Args:
@@ -167,7 +168,6 @@ async def handle_nbnhhsh(matcher: Matcher, arg: Message = CommandArg()) -> None:
 
     if parts[0].lower() in _SUBMIT_KEYWORDS:
         await _do_submit(matcher, parts[1] if len(parts) > 1 else "")
-        return
 
     try:
         tags = await guess(text, timeout=plugin_config.nbnhhsh_timeout)
