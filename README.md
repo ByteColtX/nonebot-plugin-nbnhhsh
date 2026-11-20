@@ -5,7 +5,7 @@
 ## ✨ nonebot-plugin-nbnhhsh ✨
 [![LICENSE](https://img.shields.io/github/license/ByteColtX/nonebot-plugin-nbnhhsh.svg)](./LICENSE)
 [![pypi](https://img.shields.io/pypi/v/nonebot-plugin-nbnhhsh.svg)](https://pypi.python.org/pypi/nonebot-plugin-nbnhhsh)
-[![python](https://img.shields.io/badge/python-3.10|3.11|3.12|3.13-blue.svg)](https://www.python.org)
+[![python](https://img.shields.io/badge/python-3.10|3.11|3.12|3.13|3.14-blue.svg)](https://www.python.org)
 [![uv](https://img.shields.io/badge/package%20manager-uv-black?style=flat-square&logo=uv)](https://github.com/astral-sh/uv)
 <br/>
 [![ruff](https://img.shields.io/badge/code%20style-ruff-black?style=flat-square&logo=ruff)](https://github.com/astral-sh/ruff)
@@ -140,4 +140,3 @@ yyds是什么意思
 ### 自动划词
 
 开启 `NBNHHSH_AUTO=true` 后，bot 会自动识别消息中出现的缩写并翻译，只回复有实际翻译结果的词条，暂未录入的词条不会触发回复。
-
