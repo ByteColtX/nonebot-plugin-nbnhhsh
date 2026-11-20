@@ -34,6 +34,9 @@ class TestExtractAbbrs:
     def test_no_abbr(self):
         assert extract_abbrs("你好世界") == ""
 
+    def test_min_len(self):
+        assert extract_abbrs("abc de fg", min_len=3) == "abc"
+
 
 # ── has_abbr ─────────────────────────────────────────────────────────────────
 
@@ -47,6 +50,10 @@ class TestHasAbbr:
 
     def test_single_char(self):
         assert has_abbr("a") is False
+
+    def test_min_len(self):
+        assert has_abbr("abc de", min_len=3) is True
+        assert has_abbr("de fg", min_len=3) is False
 
 
 # ── parse_tags ───────────────────────────────────────────────────────────────

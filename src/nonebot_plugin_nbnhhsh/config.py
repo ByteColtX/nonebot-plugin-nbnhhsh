@@ -12,15 +12,15 @@ nonebot_plugin_nbnhhsh.config
 """
 
 from nonebot import get_plugin_config
-from pydantic import BaseModel
+from pydantic import Field, BaseModel
 
 
 class Config(BaseModel):
     """插件配置模型。"""
 
     nbnhhsh_auto: bool = False
-    nbnhhsh_auto_min_len: int = 2
-    nbnhhsh_timeout: int = 10
+    nbnhhsh_auto_min_len: int = Field(default=2, ge=2)
+    nbnhhsh_timeout: int = Field(default=10, gt=0)
     nbnhhsh_text2pic: bool = True
 
 

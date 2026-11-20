@@ -13,30 +13,36 @@ from dataclasses import field, dataclass
 # ── 文本预处理 ──────────────────────────────────────────────────────────────
 
 
-def extract_abbrs(text: str) -> str:
+# 连续字母数字串；最短长度由调用方按配置过滤，避免各处各写一份量词。
+_ABBR_RE = re.compile(r"[a-zA-Z0-9]+")
+
+
+def extract_abbrs(text: str, min_len: int = 2) -> str:
     """提取文本中的有效缩写并用逗号拼接。
 
     等价于原 JS：``text.match(/[a-z0-9]{2,}/ig).join(',')``。
 
     Args:
         text: 输入文本。
+        min_len: 缩写的最小长度。
 
     Returns:
         提取后的缩写字符串。若未命中，则返回空字符串。
     """
-    return ",".join(re.findall(r"[a-zA-Z0-9]{2,}", text))
+    return ",".join(abbr for abbr in _ABBR_RE.findall(text) if len(abbr) >= min_len)
 
 
-def has_abbr(text: str) -> bool:
+def has_abbr(text: str, min_len: int = 2) -> bool:
     """判断文本是否包含至少一个有效缩写。
 
     Args:
         text: 输入文本。
+        min_len: 缩写的最小长度。
 
     Returns:
-        是否命中至少一个长度不小于 2 的字母或数字串。
+        是否命中至少一个长度不小于 ``min_len`` 的字母或数字串。
     """
-    return bool(re.search(r"[a-zA-Z0-9]{2,}", text))
+    return any(len(abbr) >= min_len for abbr in _ABBR_RE.findall(text))
 
 
 # ── 数据结构 ────────────────────────────────────────────────────────────────
