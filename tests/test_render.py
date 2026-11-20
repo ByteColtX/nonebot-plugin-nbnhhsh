@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import struct
 from pathlib import Path
-from collections.abc import Iterator
 
 import pytest
 
@@ -14,13 +13,10 @@ TEST_FONT = Path(__file__).resolve().parent / "assets" / "test-font.ttf"
 
 
 @pytest.fixture(autouse=True)
-def _use_test_font(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+def _use_test_font(monkeypatch: pytest.MonkeyPatch) -> None:
     """把字体固定成测试子集，避免测试去下载 18MB 的完整字体。"""
     monkeypatch.setattr(render, "SYSTEM_FONTS", (str(TEST_FONT),))
     monkeypatch.setattr(render, "_FONT_PATH", None)
-    render._font.cache_clear()
-    yield
-    render._font.cache_clear()
 
 
 def _size(png: bytes) -> tuple[int, int]:
@@ -57,7 +53,7 @@ async def test_more_meanings_make_a_taller_image() -> None:
 
 def test_wrap_breaks_chinese_by_char() -> None:
     """中文按字断行，每行都不超过给定宽度。"""
-    font = render._font(render.TEXT_SIZE)
+    font = render._font(TEST_FONT, render.TEXT_SIZE)
     lines = render.wrap("能不能好好说话能不能好好说话能不能好好说话", font, 200)
 
     assert len(lines) > 1
@@ -67,7 +63,7 @@ def test_wrap_breaks_chinese_by_char() -> None:
 
 def test_wrap_keeps_latin_words_whole() -> None:
     """英文单词整体挪到下一行，不从中间劈开。"""
-    font = render._font(render.TEXT_SIZE)
+    font = render._font(TEST_FONT, render.TEXT_SIZE)
     width = int(font.getlength("world")) + 1
     lines = render.wrap("hello world", font, width)
 

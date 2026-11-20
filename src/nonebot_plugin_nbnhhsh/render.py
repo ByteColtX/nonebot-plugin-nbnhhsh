@@ -222,11 +222,14 @@ def ensure_font() -> Path:
     )
 
 
-@lru_cache(maxsize=32)
-def _font(size: int, weight: int = 400) -> Any:
-    """按字号和字重取字体对象（带缓存）。
+def _font(path: Path, size: int, weight: int = 400) -> Any:
+    """构建字体对象。
+
+    每次渲染独立构建，不在线程之间共享 FreeType face：字体文件只加载
+    一次（见 :func:`_render`），构建开销相对整张图的绘制可以忽略。
 
     Args:
+        path: 字体文件路径。
         size: 字号（像素）。
         weight: 字重，可变字体支持 100-900。
 
@@ -235,7 +238,7 @@ def _font(size: int, weight: int = 400) -> Any:
     """
     from PIL import ImageFont
 
-    font = ImageFont.truetype(str(ensure_font()), size)
+    font = ImageFont.truetype(str(path), size)
     try:
         font.set_variation_by_axes([weight])
     except Exception:
@@ -507,12 +510,13 @@ def _render(text: str) -> bytes:
     from PIL import Image, ImageDraw
 
     scale = SUPERSAMPLE
-    heading_font = _font(HEADING_SIZE * scale, HEADING_WEIGHT)
-    desc_font = _font(DESC_SIZE * scale, DESC_WEIGHT)
-    abbr_font = _font(ABBR_SIZE * scale, ABBR_WEIGHT)
-    abbr_meta_font = _font(ABBR_META_SIZE * scale, ABBR_META_WEIGHT)
-    meaning_font = _font(MEANING_SIZE * scale, MEANING_WEIGHT)
-    text_font = _font(TEXT_SIZE * scale, TEXT_WEIGHT)
+    font_path = ensure_font()
+    heading_font = _font(font_path, HEADING_SIZE * scale, HEADING_WEIGHT)
+    desc_font = _font(font_path, DESC_SIZE * scale, DESC_WEIGHT)
+    abbr_font = _font(font_path, ABBR_SIZE * scale, ABBR_WEIGHT)
+    abbr_meta_font = _font(font_path, ABBR_META_SIZE * scale, ABBR_META_WEIGHT)
+    meaning_font = _font(font_path, MEANING_SIZE * scale, MEANING_WEIGHT)
+    text_font = _font(font_path, TEXT_SIZE * scale, TEXT_WEIGHT)
 
     page_left = PAGE_PADDING_X * scale
     page_top = PAGE_PADDING_TOP * scale
